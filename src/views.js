@@ -1,4 +1,5 @@
 class Views {
+    /** Начальное добавление обработчиков событий нажатия на кнопки управления */
     static init_set(handler) {
         var btn_route_confirm = document.getElementById('P2_VARIANT_CONFIRM');
         btn_route_confirm.addEventListener('click', async function() {
@@ -43,13 +44,18 @@ class Views {
         });
     }
 
+    /**
+     * Добавление обработчиков событий нажатия на кнопку поиска
+     * @param {*} handler_haul - обработчик для поиска по перегонам
+     * @param {*} handler_stop - обработчик для поиска по остановочным пунктам
+     */
     static search_click_handler_set(handler_haul, handler_stop) {
         var btn_search = document.getElementById('P2_SEARCH');
         btn_search.addEventListener('click', async function() {
             if ($v('P2_SELECT_SEARCH_ELEMENT') == 0) {
-                var poi_start = $v('P2_SEARCH_START_STOP');
-                var poi_finish = $v('P2_SEARCH_END_STOP');
-                await handler_haul(poi_start, poi_finish);
+                var start_stop_id = $v('P2_SEARCH_START_STOP');
+                var end_stop_id = $v('P2_SEARCH_END_STOP');
+                await handler_haul(start_stop_id, end_stop_id);
             } else {
                 var stop_id = $v('P2_SEARCH_STOP_ID');
                 await handler_stop(stop_id);
@@ -57,6 +63,7 @@ class Views {
         });
     }
 
+    /** Удаление событий нажатия на кнопку поиска */
     static search_click_handler_unset() {
         var btn_search = document.getElementById('P2_SEARCH');
         var cln = btn_search.cloneNode(true);

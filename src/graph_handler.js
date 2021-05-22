@@ -1,52 +1,77 @@
+/** Описание объекта, определяющего логику обработки событий 
+ * выбора элементов модели транспортной сети */
 class Graph_handler {
+    /**
+     * @param {Chart} chart - объект диаграммы
+     */
     constructor(chart) {
         this.chart = chart;
         this.stops_data = null;
-
         this.current_selected = null;
     }
 
+    /**
+     * Передача обработчиков событий стороннего выбора остановочных пунктов и перегонов
+     * в представление для их добавления к обработке событий пользовательского поиска 
+     * по модели транспортной сети
+     * @param {*} forced_set_haul 
+     * @param {*} forced_set_stop 
+     * @returns 
+     */
     set_handlers(forced_set_haul, forced_set_stop) {
         Views.search_click_handler_set(forced_set_haul, forced_set_stop);  
         return this;
     }
 
-    #full_info_block(transport_data, click_handler) {
+    /**
+     * Создание блоков для группы маршрутов, 
+     * проходящих через конкретный перегон или остановочный пункт  
+     * @param {*} transport_data - исходные данные о маршрутах одной группы, 
+     * @param {*} click_handler - обработчик события нажатия на блок маршрута
+     */
+    _full_all_blocks(transport_data, click_handler) {
         this.clear();
 
         transport_data.forEach(element => {
-            this.#set_element_info(element, click_handler);
+            this._set_element_block(element, click_handler);
         });    
     }
 
-    #set_element_info(route_info, click_handler) {
+    /**
+     * Создание блока для одного маршрута
+     * @param {*} route_info - исходные данные о маршруте
+     * @param {*} click_handler - обработчик события нажатия на блок маршрута
+     * @returns 
+     */
+    _set_element_block(route_info, click_handler) {
         var tr_class = "tr_info_element_graph";
         var tr_data_class = "tr_info_element_data_graph";
 
         var tr_block = document.getElementById("tr_info_block");
 
-        var info_div = document.createElement("div");
-        info_div.className = tr_class;
-        info_div.setAttribute("ROUTE_NUMBER", route_info['ROUTE_NUMBER']);
-        info_div.setAttribute("ROUTE_VARIANT", route_info['ROUTE_VARIANT']);
+        var block_div = document.createElement("div");
+        block_div.className = tr_class;
+        block_div.setAttribute("ROUTE_NUMBER", route_info['ROUTE_NUMBER']);
+        block_div.setAttribute("ROUTE_VARIANT", route_info['ROUTE_VARIANT']);
 
         var tr_num = document.createElement("div");
         tr_num.className = tr_data_class;
         tr_num.innerText = `Маршрут: ${route_info['ROUTE_NUMBER']} (${route_info['ROUTE_ID_ASU']})`;
-        info_div.append(tr_num);
+        block_div.append(tr_num);
 
         var tr_var = document.createElement("div");
         tr_var.className = tr_data_class;
         tr_var.innerText = `Вариант: ${route_info['ROUTE_VARIANT']}`;
-        info_div.append(tr_var);
+        block_div.append(tr_var);
 
-        tr_block.append(info_div);
+        tr_block.append(block_div);
 
-        info_div.addEventListener('click', click_handler);
+        block_div.addEventListener('click', click_handler);
 
-        return info_div;
+        return block_div;
     }
 
+    /** Удаление блоков для группы маршрутов */
     clear() {
         var tr_block = document.getElementById("tr_info_block");
         while (tr_block.firstChild) {
@@ -56,7 +81,8 @@ class Graph_handler {
         this.current_selected = null;
     }
 
-    async #on_info_haul_click(event) {
+    /** Обработка выбора блока маршрута */
+    async _on_block_selected(event, element_type) {
         if (this.current_selected != null) {
             this.current_selected.className = 'tr_info_element_graph';
         }
@@ -72,38 +98,26 @@ class Graph_handler {
         var stops_data = this.stops_data;
 
         this.chart.set_options({
-            element_type: 'haul',
+            element_type: element_type,
             route_data: route_data,
             stops_data: stops_data
         });
         await this.chart.display();
     }
 
-    // Обработка события нажатия на инфоблок для остановки
-    async #on_info_stop_click(event) {
-        if (this.current_selected != null) {
-            this.current_selected.className = 'tr_info_element_graph';
-        }
-
-        this.current_selected = event.currentTarget;
-        event.currentTarget.className = 'tr_info_element_selected_graph';
-
-        var route_data = {
-            route_number: event.currentTarget.getAttribute('ROUTE_NUMBER'),
-            route_variant: event.currentTarget.getAttribute('ROUTE_VARIANT')
-        };
-
-        var stops_data = this.stops_data;
-
-        this.chart.set_options({
-            element_type: 'stop',
-            route_data: route_data,
-            stops_data: stops_data
-        });
-        await this.chart.display();
+    /** Обработка события нажатия на блок маршрута, 
+     * проходящего через конкретный перегон */
+    async _on_block_haul_click(event) {
+        await this._on_block_selected(event, 'haul');
     }
 
-    // Обработка события нажатия на перегон
+    /** Обработка события нажатия на блок маршрута, 
+     * проходящего через конкретный остановочный пункт */
+    async _on_block_stop_click(event) {
+        await this._on_block_selected(event, 'stop');
+    }
+
+    /** Обработка события выбора перегона на карте */
     async on_haul_selected(stops_data) {
         this.chart.remove();
 
@@ -126,10 +140,10 @@ class Graph_handler {
 
         Views.set_segment_report(stops_data.start_stop_id, stops_data.end_stop_id);
         this.stops_data = stops_data;
-        this.#full_info_block(transport_data, this.#on_info_haul_click.bind(this));
+        this._full_all_blocks(transport_data, this._on_block_haul_click.bind(this));
     }
 
-    // Обработка события нажатия на остановку
+    /** Обработка события выбора остановочного пункта на карте */
     async on_stop_selected(stops_data) {
         this.chart.remove();
 
@@ -145,17 +159,20 @@ class Graph_handler {
         Views.set_stop_report(stops_data.stop_id);
         Views.set_stop_com_report(stops_data.stop_id)
         this.stops_data = stops_data;
-        this.#full_info_block(transport_data, this.#on_info_stop_click.bind(this));
+        this._full_all_blocks(transport_data, this._on_block_stop_click.bind(this));
     }
 
+    /** Удаление всех блоков и диаграмм */
     hide() {
         this.clear();
         this.chart.remove();
 
         Chart_com.clear();
         Views.search_click_handler_unset();
+        
         Views.heatmap_update_unset();
         Views.clear_heatmap();
+
         Views.show_or_hide_stop_diagram(false);
         Views.show_or_hide_haul_diagram(false);
     }

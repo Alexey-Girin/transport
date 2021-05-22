@@ -31,6 +31,11 @@ async function init() {
         await clear_all();
     }
 
+    /**
+     * Отображение одного маршрута на карте 
+     * @param {{route_number: string, route_variant: number}} route_data 
+     * - данные о маршруте
+     */
     async function on_route_selected(route_data) {
         await clear_all();
 
@@ -49,6 +54,10 @@ async function init() {
         current_displayable = route;
     }
 
+    /**
+     * Отображение модели транспортной сети на карте для одного вида транспорта
+     * @param {number} tr_type - вид транспорта
+     */
     async function on_graph_selected(tr_type) {
         await clear_all();
 
