@@ -42,6 +42,11 @@ async function init() {
         var geometry_data = await loading_data.load_route_geometry(route_data);
         var stops_data = await loading_data.load_route_stops(route_data);
 
+        if (Views.get_visualisation_type() != 1
+        || current_displayable != null) {
+            return;
+        }
+
         console.log("geom_data", geometry_data);
         console.log("stops_data", stops_data);
 

@@ -1,6 +1,6 @@
-// загрузка данных со стороны сервера
+/** Загрузка данных со стороны сервера */
 var loading_data = function() {
-    // public: загрузка геометрии перегонов для маршрута
+    /** Загрузка геометрий перегонов для одного маршрута */
     async function load_route_geometry(route_data) {
         Views.open_loader();
 
@@ -8,7 +8,7 @@ var loading_data = function() {
         var route_geometry = [];
 
         try {
-            loaded_data = (await get_route_geometry(route_data.route_number, route_data.route_variant, route_data.direction)).rows;
+            loaded_data = (await get_route_geometry(route_data.route_variant, route_data.direction)).rows;
         } catch(e) {
             console.log('error to load route geometry', e);
             Views.hide_loader();
@@ -108,7 +108,11 @@ var loading_data = function() {
         return time;
     }
 
-    // Загрузка геометрии графа
+    /**
+     * Загрузка геометрий перегонов для одного вида транспорта
+     * @param {number} tr_type - вид транспорта
+     * @returns 
+     */
     async function load_graph_geometry(tr_type) {
         var full_data = null;
         Views.open_loader();
@@ -116,13 +120,13 @@ var loading_data = function() {
         try {
             full_data = (await get_graph_geometry(tr_type)).rows;
         } catch(e) {
-            console.log('Ошибка загрузки (геометрия графа): ', tr_type);
+            console.log('Ошибка загрузки (геометрии перегонов): ', tr_type);
             Views.hide_loader();
             return null;
         }
 
         if (full_data.length == 0) {
-            console.log('Ошибка загрузки (геометрия графа): ', tr_type);
+            console.log('Ошибка загрузки (геометрии перегонов): ', tr_type);
             Views.hide_loader();
             return null;
         }
@@ -137,7 +141,6 @@ var loading_data = function() {
         }
 
         Views.hide_loader();
-
         return full_data;
     }
 
@@ -217,6 +220,18 @@ var loading_data = function() {
         var full_data = null;
 
         Views.open_loader();
+
+        if (tr_type == 7) {
+            try {
+                full_data = (await get_stops_metro()).rows;
+            } catch(e) {
+                console.log('Ошибка загрузки (остановки графа): ', tr_type);
+                return null;
+            }
+
+            Views.hide_loader();
+            return full_data;
+        }
 
         try {
             full_data = (await get_all_stops_by_tr_type(tr_type)).rows;
@@ -511,6 +526,8 @@ var loading_data = function() {
     }
 
     async function load_destination(stop_id, date) {
+        Views.open_loader();
+
         var stops = null;
         var parsed_date = date.split('.');
         date = [parsed_date[1], parsed_date[0], parsed_date[2]].join('/');
@@ -519,8 +536,10 @@ var loading_data = function() {
             stops = (await get_destination(stop_id, date)).rows;
         } catch(e) {
             console.log('error to load stops');
+            Views.hide_loader();
         }
 
+        Views.hide_loader();
         if (stops == undefined) {
             return null;
         }
